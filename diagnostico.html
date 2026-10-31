@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Revisión de conexión · Catálogo Navideño</title>
+<style>
+  body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;background:#f6f1e6;color:#1d2b24;line-height:1.5}
+  main{max-width:640px;margin:0 auto;padding:22px 16px 40px}
+  h1{font-size:22px;margin:0 0 4px}
+  p.sub{margin:0 0 18px;color:#5b6b63;font-size:14px}
+  .fila{display:flex;gap:12px;background:#fff;border:1px solid #e4dccb;border-radius:14px;padding:12px 14px;margin-bottom:10px}
+  .ic{flex:none;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;background:#aaa}
+  .ok .ic{background:#1fa855}.mal .ic{background:#c8102e}.esp .ic{background:#d9b44a}
+  .fila b{display:block;font-size:15px}
+  .fila span{font-size:13.5px;color:#46564e;word-break:break-word}
+  .ayuda{background:#fff3cd;border:1px solid #ecd68a;border-radius:12px;padding:12px 14px;font-size:14px;margin-top:14px}
+  .final{margin-top:16px;padding:14px;border-radius:14px;font-weight:700;font-size:15px}
+  .final.ok{background:#e6f6ec;color:#0b6b3a}.final.mal{background:#fde8ea;color:#8a0f22}
+  a{color:#0b6b3a}
+  code{background:#efe8d6;padding:1px 5px;border-radius:5px;font-size:12.5px}
+</style></head><body>
+<main>
+  <h1>🎄 Revisión de conexión</h1>
+  <p class="sub">Esta página comprueba, paso a paso, si tu sitio ya está conectado con tu hoja de Google. No guarda ni cambia nada.</p>
+  <div id="lista"></div>
+  <div id="cierre"></div>
+</main>
+<script src="config.js"></script>
+<script>
+(function(){
+  var L=document.getElementById('lista'), cierre=document.getElementById('cierre'), fallo=false;
+  function fila(estado,titulo,detalle){
+    var d=document.createElement('div'); d.className='fila '+estado;
+    d.innerHTML='<div class="ic">'+(estado==='ok'?'✓':estado==='mal'?'✕':'…')+'</div><div><b></b><span></span></div>';
+    d.querySelector('b').textContent=titulo; d.querySelector('span').textContent=detalle||'';
+    L.appendChild(d); return d;
+  }
+  function cambiar(d,estado,titulo,detalle){
+    d.className='fila '+estado; d.querySelector('.ic').textContent=(estado==='ok'?'✓':estado==='mal'?'✕':'…');
+    if(titulo) d.querySelector('b').textContent=titulo; d.querySelector('span').textContent=detalle||'';
+    if(estado==='mal') fallo=true;
+  }
+  function ayuda(txt){ var a=document.createElement('div'); a.className='ayuda'; a.innerHTML=txt; cierre.appendChild(a); }
+  function fin(){
+    var f=document.createElement('div');
+    if(fallo){ f.className='final mal'; f.textContent='Hay algo por corregir (revisa las marcas rojas de arriba).'; }
+    else { f.className='final ok'; f.textContent='¡Todo conectado! Tu sitio y tu hoja ya se hablan. Haz un pedido de prueba y revisa la hoja “Pedidos”.'; }
+    cierre.insertBefore(f,cierre.firstChild);
+  }
+
+  var C=window.CONFIG_ESTATICO;
+  var r1=fila('esp','1. Archivo config.js','Revisando…');
+  if(!C){ cambiar(r1,'mal','1. Archivo config.js','No se pudo leer. Comprueba que subiste config.js a la misma carpeta que index.html.'); ayuda('Sube de nuevo <code>config.js</code> a tu repositorio de GitHub (Add file → Upload files).'); fin(); return; }
+  cambiar(r1,'ok','1. Archivo config.js','Se leyó bien.');
+
+  var u=String(C.API_URL||'').trim();
+  var r2=fila('esp','2. Enlace de tu Apps Script','Revisando…');
+  if(!u||/PEGA_AQUI/i.test(u)){ cambiar(r2,'mal','2. Enlace de tu Apps Script','Todavía dice “PEGA_AQUI…”. El config.js que está en GitHub no tiene tu enlace.'); ayuda('Abre <code>config.js</code> en tu repositorio de GitHub, toca el lápiz ✏ (Edit), pega tu enlace <code>/exec</code> entre las comillas y toca “Commit changes”. Espera 1–2 minutos y recarga esta página.'); fin(); return; }
+  if(!/^https:\/\/script\.google\.com\/macros\/s\/[\w-]+\/exec$/.test(u)){
+    cambiar(r2,'mal','2. Enlace de tu Apps Script','El enlace no tiene la forma correcta: '+u.slice(0,60)+'…');
+    ayuda('Debe empezar por <code>https://script.google.com/macros/s/</code> y terminar en <code>/exec</code>. Cópialo de Implementar → Administrar implementaciones → <b>App web → URL</b>. No uses el de “Biblioteca”.'); fin(); return; }
+  cambiar(r2,'ok','2. Enlace de tu Apps Script','Tiene la forma correcta.');
+
+  var r3=fila('esp','3. Conexión con tu hoja','Llamando a tu Apps Script… (puede tardar unos segundos la primera vez)');
+  var ctl=('AbortController' in window)?new AbortController():null, t=setTimeout(function(){ if(ctl) ctl.abort(); },35000);
+  fetch(u,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({fn:'getDatos',args:[]}),redirect:'follow',signal:ctl?ctl.signal:undefined})
+  .then(function(r){ return r.text(); })
+  .then(function(txt){
+    clearTimeout(t); var j; try{ j=JSON.parse(txt); }catch(e){ j=null; }
+    if(!j){
+      cambiar(r3,'mal','3. Conexión con tu hoja','Google respondió, pero no con los datos esperados (suele ser una página de inicio de sesión).');
+      ayuda('Casi seguro tu implementación no está como <b>“Cualquier persona”</b>. En Apps Script: Implementar → Administrar implementaciones → lápiz → <b>Quién tiene acceso: Cualquier persona</b> → Versión: <b>Nueva versión</b> → Implementar.'); fin(); return; }
+    if(!j.ok){
+      var m=String(j.error||'');
+      cambiar(r3,'mal','3. Conexión con tu hoja', /no permitida/i.test(m)?'Tu Apps Script todavía tiene el código viejo (sin la parte nueva para sitios externos).':m);
+      ayuda('Pega el <code>Code.gs</code> nuevo en Apps Script y publica una <b>Nueva versión</b>: Implementar → Administrar implementaciones → lápiz → Versión: Nueva versión → Implementar.'); fin(); return; }
+    var d=j.data||{}, cfg=d.config||{}, np=(d.productos||[]).length;
+    cambiar(r3,'ok','3. Conexión con tu hoja','Conectado. Productos activos: '+np+'.');
+    var r4=fila(np>0?'ok':'mal','4. Productos',np>0?('Se leyeron '+np+' productos de tu hoja.'):'La hoja no devolvió productos. Revisa la pestaña “Productos” (columna ACTIVO).'); if(np<1) fallo=true;
+    var wa=String(cfg.WHATSAPP||'').replace(/\D/g,'');
+    var r5=fila(wa.length>=11?'ok':'mal','5. WhatsApp del negocio',wa.length>=11?('Número: '+wa):'Falta el número en la hoja Configuración (clave WHATSAPP, con 57 al inicio).'); if(wa.length<11) fallo=true;
+    fila('ok','6. Medios de pago que verá el cliente',cfg.MEDIOS_PAGO||'(vacío)');
+    fila((cfg.FECHA_LIMITE_PAGO&&cfg.FECHAS_ENTREGA)?'ok':'mal','7. Fechas',(cfg.FECHA_LIMITE_PAGO||'falta FECHA_LIMITE_PAGO')+' · '+(cfg.FECHAS_ENTREGA||'faltan FECHAS_ENTREGA'));
+    fin();
+  })
+  .catch(function(e){
+    clearTimeout(t);
+    cambiar(r3,'mal','3. Conexión con tu hoja',(e&&e.name==='AbortError')?'Tardó demasiado en responder.':'El navegador no pudo comunicarse con tu Apps Script.');
+    ayuda('Lo más común: la implementación no está como <b>“Cualquier persona”</b> o falta publicar la <b>Nueva versión</b> con el Code.gs nuevo. También puede ser un enlace copiado a medias.'); fin();
+  });
+})();
+</script>
+</body></html>
