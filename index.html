@@ -688,7 +688,7 @@ window.Portada=(function(){
   function pintarTextos(){
     var lim=corto(cfg.FECHA_LIMITE_PAGO)||'3 de diciembre', ent=corto(cfg.FECHAS_ENTREGA)||'del 16 al 20 de diciembre';
     var ch=$('ptChips'); ch.textContent='';
-    [['📅','Asegura tu pedido hasta el '+lim],['💳','Medios de pago: '+(cfg.MEDIOS_PAGO||'Nequi, Bre-B, Efectivo y otros')],['🚚','Entregamos '+ent]].forEach(function(c){
+    [['📅','Asegura tu pedido hasta el '+lim],['💳','Medios de pago: '+(cfg.MEDIOS_PAGO||'Nequi, Bre-B, Efectivo')],['🚚','Entregamos '+ent]].forEach(function(c){
       var d=document.createElement('div'); d.className='pt-chip'; var e=document.createElement('em'), s=document.createElement('span'); e.textContent=c[0]; s.textContent=c[1]; d.appendChild(e); d.appendChild(s); ch.appendChild(d); });
     var ley=$('ptLey'); ley.textContent='';
     var b=document.createElement('b'); b.textContent='Condición: '; ley.appendChild(b);
@@ -769,8 +769,8 @@ window.Portada=(function(){
   function saltar(){ if(!abierta) return; abierta=false; el.hidden=true; }
   function abrir(){ if(abierta) return; abierta=true; $('ptCta').disabled=false; el.hidden=false; void el.offsetWidth; el.classList.remove('fuera'); ajustarLuego(); }
   function compartir(){
-    var link=cfg.SITIO_URL||cfg.APP_URL||'';
-    var msg='🎄✨ ¡Hola! Ya está aquí el Catálogo Navideño Colanta 2026 🎁\nMíralo, elige tus favoritos y haz tu pedido en un minuto.\n💳 '+(cfg.MEDIOS_PAGO||'Nequi, Bre-B, Efectivo y otros')+' 👉'+(link?('\n'+link):'');
+    var link=cfg.SITIO_URL||cfg.APP_URL||''; if(!/^https?:\/\//i.test(link)){ try{ link=location.href.split(/[?#]/)[0]; }catch(e){ link=''; } }
+    var msg='🎄✨ ¡Hola! Ya está aquí el Catálogo Navideño Colanta 2026 🎁\nMíralo, elige tus favoritos y haz tu pedido en un minuto.\n💳 '+(cfg.MEDIOS_PAGO||'Nequi, Bre-B, Efectivo')+(link?('\n👉 '+link):'');
     if(navigator.share){ navigator.share({text:msg}).catch(function(){}); return; }
     window.open('https://wa.me/?text='+encodeURIComponent((window.waSeguro?waSeguro(msg):msg)),'_blank');
   }
@@ -1370,7 +1370,7 @@ if(typeof google==='undefined'||!google.script){
     var chips=h('div',{class:'chips'});
     if(cfg.FECHA_LIMITE_PAGO) chips.appendChild(h('div',{class:'chip'},[ico('fa-solid fa-calendar-check'),h('div',null,[h('b',{text:'Pagos y abonos'}),'Hasta el '+cfg.FECHA_LIMITE_PAGO+'. Debe quedar pagado en su totalidad.'])]));
     if(cfg.FECHAS_ENTREGA) chips.appendChild(h('div',{class:'chip'},[ico('fa-solid fa-truck-fast'),h('div',null,[h('b',{text:'Entregas'}),cfg.FECHAS_ENTREGA.charAt(0).toUpperCase()+cfg.FECHAS_ENTREGA.slice(1)+'.'])]));
-    chips.appendChild(h('div',{class:'chip'},[ico('fa-solid fa-credit-card'),h('div',null,[h('b',{text:'Medios de pago'}),cfg.MEDIOS_PAGO||'Nequi, Bre-B, Efectivo y otros'])]));
+    chips.appendChild(h('div',{class:'chip'},[ico('fa-solid fa-credit-card'),h('div',null,[h('b',{text:'Medios de pago'}),cfg.MEDIOS_PAGO||'Nequi, Bre-B, Efectivo'])]));
     L.appendChild(chips);
     L.appendChild(h('div',{class:'bloque'},[
       h('h3',null,[h('span',{id:'latCant',style:'display:none'}),]),
